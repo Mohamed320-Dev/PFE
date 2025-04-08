@@ -11,7 +11,8 @@ const ClientProductList = () => {
   const [error, setError] = useState("");
   const [cartMessage, setCartMessage] = useState("");
   const { token } = useContext(AppContext);
-  const [selectedRating, setSelectedRating] = useState(null); // Track the clicked star rating
+  // Instead of tracking a single selected rating, we'll track selected ratings by product ID
+  const [selectedRatings, setSelectedRatings] = useState({});
 
   useEffect(() => {
     fetchProducts();
@@ -34,8 +35,13 @@ const ClientProductList = () => {
   };
 
   const handleStarClick = (rating, productId) => {
-    setSelectedRating(rating);
-    // Here, you can update the number of reviews based on the rating
+    // Update the selectedRatings object with the new rating for this specific product
+    setSelectedRatings(prev => ({
+      ...prev,
+      [productId]: rating
+    }));
+    
+    // Update the product's rating in the products array
     const updatedProducts = products.map((product) =>
       product.id === productId ? { ...product, rating, reviews: 3 } : product
     );
@@ -44,18 +50,26 @@ const ClientProductList = () => {
 
   const renderStars = (rating, productId) => {
     const stars = [];
+    // Get the selected rating for this specific product (if any)
+    const productSelectedRating = selectedRatings[productId];
+    
     for (let i = 0; i < 5; i++) {
+      // Check if this star should be filled based on either:
+      // 1. The product's current rating OR
+      // 2. The user's selected rating for this specific product
       const isFilled = i < rating;
+      const isSelected = productSelectedRating && i < productSelectedRating;
+      
       stars.push(
         <span
           key={i}
           className={`star ${isFilled ? "filled" : ""}`}
           style={{
             fontSize: "23px",
-            color: isFilled || (selectedRating && selectedRating >= i + 1) ? "#FFD700" : "#ccc", // Update color for clicked stars
+            color: isFilled || isSelected ? "#FFD700" : "#ccc",
             cursor: "pointer",
           }}
-          onClick={() => handleStarClick(i + 1, productId)} // Update rating when star clicked
+          onClick={() => handleStarClick(i + 1, productId)}
         >
           ★
         </span>
@@ -116,7 +130,7 @@ const ClientProductList = () => {
     <div className="min-h-screen bg-white p-6">
       <div className="max-w-6xl mx-auto">
         <button
-          className="absolute text-black px-4 py-2 rounded-lg transition-transform duration-300 mt-[0px] ml-[0px] hover:scale-105"
+          className="absolute text-black px-4 py-2 rounded-lg transition-transform duration-300 mt-0 ml-0 hover:scale-105"
           onClick={handleBackClick}  // Custom click handler
         > &larr; Back
         </button>
